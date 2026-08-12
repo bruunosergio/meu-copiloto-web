@@ -3,7 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Button } from '../../components';
 import { ROLE_LABEL, User } from '../../domain';
 import { extractErrorMessage } from '../../lib/api-client';
-import { usersService } from '../../services';
+import { UpdateUserPayload, usersService } from '../../services';
 import { UserFormModal, UserFormValues } from './UserFormModal';
 
 export function UsersPage() {
@@ -23,7 +23,7 @@ export function UsersPage() {
   });
 
   const updateMutation = useMutation({
-    mutationFn: ({ id, payload }: { id: string; payload: Partial<UserFormValues> }) =>
+    mutationFn: ({ id, payload }: { id: string; payload: UpdateUserPayload }) =>
       usersService.update(id, payload),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['users'] }),
   });
