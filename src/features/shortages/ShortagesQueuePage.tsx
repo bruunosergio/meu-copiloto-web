@@ -1,12 +1,12 @@
 import { useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Input } from '../../components';
+import { CollapsibleSection, Input } from '../../components';
 import { Shortage, ShortageStatus, STATUS_LABEL } from '../../domain';
 import { extractErrorMessage } from '../../lib/api-client';
 import { shortagesService } from '../../services';
 import { useAuth } from '../auth/AuthContext';
 import { CancelShortageModal } from './CancelShortageModal';
-import { ShortageCard } from './ShortageCard';
+import { ShortageListRow } from './ShortageListRow';
 
 const COLUNAS_ABERTAS: ShortageStatus[] = [
   ShortageStatus.REGISTRADA,
@@ -67,6 +67,34 @@ export function ShortagesQueuePage() {
 
   if (!user) return null;
 
+  function renderSecao(status: ShortageStatus, podeAgir: boolean) {
+    const itens = porStatus.get(status) ?? [];
+    return (
+      <CollapsibleSection key={status} title={STATUS_LABEL[status]} count={itens.length}>
+        <div className="divide-y divide-slate-100">
+          {itens.map((shortage) => (
+            <ShortageListRow
+              key={shortage.id}
+              shortage={shortage}
+              currentUserId={user!.id}
+              currentUserRole={user!.papel}
+              isMutating={podeAgir && transitionMutation.isPending}
+              onAdvance={
+                podeAgir
+                  ? (s, novoStatus) => transitionMutation.mutate({ id: s.id, novoStatus })
+                  : () => {}
+              }
+              onCancel={podeAgir ? (s) => setCancelando(s) : () => {}}
+            />
+          ))}
+          {itens.length === 0 && (
+            <p className="px-4 py-3 text-sm text-slate-400">Nenhuma falta aqui.</p>
+          )}
+        </div>
+      </CollapsibleSection>
+    );
+  }
+
   return (
     <div>
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
@@ -93,59 +121,13 @@ export function ShortagesQueuePage() {
       {error && <p className="mb-3 text-sm text-red-600">{extractErrorMessage(error)}</p>}
       {isLoading && <p className="text-sm text-slate-500">Carregando faltas...</p>}
 
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-        {COLUNAS_ABERTAS.map((status) => (
-          <div key={status}>
-            <h2 className="mb-2 text-sm font-semibold text-slate-500">
-              {STATUS_LABEL[status]} ({porStatus.get(status)?.length ?? 0})
-            </h2>
-            <div className="flex flex-col gap-3">
-              {porStatus.get(status)?.map((shortage) => (
-                <ShortageCard
-                  key={shortage.id}
-                  shortage={shortage}
-                  currentUserId={user.id}
-                  currentUserRole={user.papel}
-                  isMutating={transitionMutation.isPending}
-                  onAdvance={(s, novoStatus) =>
-                    transitionMutation.mutate({ id: s.id, novoStatus })
-                  }
-                  onCancel={(s) => setCancelando(s)}
-                />
-              ))}
-              {porStatus.get(status)?.length === 0 && (
-                <p className="text-sm text-slate-400">Nenhuma falta aqui.</p>
-              )}
-            </div>
-          </div>
-        ))}
+      <div className="flex flex-col gap-4">
+        {COLUNAS_ABERTAS.map((status) => renderSecao(status, true))}
       </div>
 
       {mostrarConcluidas && (
-        <div className="mt-8">
-          <h2 className="mb-3 text-sm font-semibold text-slate-500">Concluídas e canceladas</h2>
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-            {STATUS_CONCLUIDOS.map((status) => (
-              <div key={status}>
-                <h3 className="mb-2 text-xs font-semibold uppercase text-slate-400">
-                  {STATUS_LABEL[status]} ({porStatus.get(status)?.length ?? 0})
-                </h3>
-                <div className="flex flex-col gap-3">
-                  {porStatus.get(status)?.map((shortage) => (
-                    <ShortageCard
-                      key={shortage.id}
-                      shortage={shortage}
-                      currentUserId={user.id}
-                      currentUserRole={user.papel}
-                      isMutating={false}
-                      onAdvance={() => {}}
-                      onCancel={() => {}}
-                    />
-                  ))}
-                </div>
-              </div>
-            ))}
-          </div>
+        <div className="mt-6 flex flex-col gap-4">
+          {STATUS_CONCLUIDOS.map((status) => renderSecao(status, false))}
         </div>
       )}
 
