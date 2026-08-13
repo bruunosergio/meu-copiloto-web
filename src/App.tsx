@@ -4,6 +4,7 @@ import { LoginPage } from './features/auth/LoginPage';
 import { ProtectedRoute } from './features/auth/ProtectedRoute';
 import { Role } from './domain';
 import { UsersPage } from './features/users/UsersPage';
+import { DistribuidorasPage } from './features/distribuidoras/DistribuidorasPage';
 import { RegisterShortagePage } from './features/shortages/RegisterShortagePage';
 import { ShortagesQueuePage } from './features/shortages/ShortagesQueuePage';
 
@@ -20,6 +21,7 @@ export default function App() {
 
           <Route element={<ProtectedRoute allowedRoles={[Role.ADMIN]} />}>
             <Route path="/usuarios" element={<UsersPage />} />
+            <Route path="/distribuidoras" element={<DistribuidorasPage />} />
           </Route>
         </Route>
       </Route>

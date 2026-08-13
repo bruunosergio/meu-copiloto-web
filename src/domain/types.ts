@@ -32,8 +32,18 @@ export interface Shortage {
   qtdRestante: number;
   observacao: string | null;
   registradoPorId: string;
+  distribuidoraId: string | null;
   origem: 'WEB' | 'WHATSAPP_AUDIO' | 'WHATSAPP_TEXTO';
   status: ShortageStatus;
+  criadaEm: string;
+  atualizadaEm: string;
+}
+
+export interface Distribuidora {
+  id: string;
+  storeId: string;
+  nome: string;
+  ativa: boolean;
   criadaEm: string;
   atualizadaEm: string;
 }

@@ -27,9 +27,14 @@ export function Layout() {
                 Registrar Falta
               </NavLink>
               {user.papel === Role.ADMIN && (
-                <NavLink to="/usuarios" className={linkClasses}>
-                  Usuários
-                </NavLink>
+                <>
+                  <NavLink to="/usuarios" className={linkClasses}>
+                    Usuários
+                  </NavLink>
+                  <NavLink to="/distribuidoras" className={linkClasses}>
+                    Distribuidoras
+                  </NavLink>
+                </>
               )}
             </nav>
           </div>

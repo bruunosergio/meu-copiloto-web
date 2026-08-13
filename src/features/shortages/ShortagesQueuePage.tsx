@@ -1,12 +1,15 @@
 import { useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { CollapsibleSection, Input } from '../../components';
-import { Shortage, ShortageStatus, STATUS_LABEL } from '../../domain';
+import { Role, Shortage, ShortageStatus, STATUS_LABEL } from '../../domain';
 import { extractErrorMessage } from '../../lib/api-client';
-import { shortagesService } from '../../services';
+import { distribuidorasService, shortagesService } from '../../services';
 import { useAuth } from '../auth/AuthContext';
 import { CancelShortageModal } from './CancelShortageModal';
+import { DistribuidoraPickerModal } from './DistribuidoraPickerModal';
 import { ShortageListRow } from './ShortageListRow';
+
+type EscolhaDistribuidora = { shortage: Shortage; modo: 'transicao' | 'correcao' };
 
 const COLUNAS_ABERTAS: ShortageStatus[] = [
   ShortageStatus.REGISTRADA,
@@ -22,6 +25,9 @@ export function ShortagesQueuePage() {
   const [busca, setBusca] = useState('');
   const [mostrarConcluidas, setMostrarConcluidas] = useState(false);
   const [cancelando, setCancelando] = useState<Shortage | null>(null);
+  const [escolhendoDistribuidora, setEscolhendoDistribuidora] = useState<EscolhaDistribuidora | null>(
+    null,
+  );
   const [actionError, setActionError] = useState<string | null>(null);
 
   const { data: shortages, isLoading, error } = useQuery({
@@ -30,9 +36,41 @@ export function ShortagesQueuePage() {
     refetchInterval: 15000,
   });
 
+  const { data: distribuidoras } = useQuery({
+    queryKey: ['distribuidoras'],
+    queryFn: distribuidorasService.list,
+  });
+
+  const distribuidoraNomePorId = useMemo(() => {
+    const mapa = new Map<string, string>();
+    for (const distribuidora of distribuidoras ?? []) {
+      mapa.set(distribuidora.id, distribuidora.nome);
+    }
+    return mapa;
+  }, [distribuidoras]);
+
+  const distribuidorasAtivas = useMemo(
+    () => (distribuidoras ?? []).filter((d) => d.ativa),
+    [distribuidoras],
+  );
+
   const transitionMutation = useMutation({
-    mutationFn: ({ id, novoStatus }: { id: string; novoStatus: ShortageStatus }) =>
-      shortagesService.transition(id, { novoStatus }),
+    mutationFn: ({
+      id,
+      novoStatus,
+      distribuidoraId,
+    }: {
+      id: string;
+      novoStatus: ShortageStatus;
+      distribuidoraId?: string;
+    }) => shortagesService.transition(id, { novoStatus, distribuidoraId }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['shortages'] }),
+    onError: (err) => setActionError(extractErrorMessage(err)),
+  });
+
+  const setDistribuidoraMutation = useMutation({
+    mutationFn: ({ id, distribuidoraId }: { id: string; distribuidoraId: string | null }) =>
+      shortagesService.setDistribuidora(id, distribuidoraId),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['shortages'] }),
     onError: (err) => setActionError(extractErrorMessage(err)),
   });
@@ -42,6 +80,8 @@ export function ShortagesQueuePage() {
       shortagesService.cancel(id, motivo),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['shortages'] }),
   });
+
+  const souGerenciador = !!user && (user.papel === Role.ADMIN || user.papel === Role.COMPRADOR);
 
   const filtradas = useMemo(() => {
     if (!shortages) return [];
@@ -78,13 +118,28 @@ export function ShortagesQueuePage() {
               shortage={shortage}
               currentUserId={user!.id}
               currentUserRole={user!.papel}
-              isMutating={podeAgir && transitionMutation.isPending}
+              distribuidoraNome={
+                shortage.distribuidoraId
+                  ? distribuidoraNomePorId.get(shortage.distribuidoraId)
+                  : undefined
+              }
+              podeEditarDistribuidora={souGerenciador}
+              isMutating={
+                (podeAgir && transitionMutation.isPending) || setDistribuidoraMutation.isPending
+              }
               onAdvance={
                 podeAgir
-                  ? (s, novoStatus) => transitionMutation.mutate({ id: s.id, novoStatus })
+                  ? (s, novoStatus) => {
+                      if (novoStatus === ShortageStatus.COMPRADA) {
+                        setEscolhendoDistribuidora({ shortage: s, modo: 'transicao' });
+                      } else {
+                        transitionMutation.mutate({ id: s.id, novoStatus });
+                      }
+                    }
                   : () => {}
               }
               onCancel={podeAgir ? (s) => setCancelando(s) : () => {}}
+              onEditDistribuidora={(s) => setEscolhendoDistribuidora({ shortage: s, modo: 'correcao' })}
             />
           ))}
           {itens.length === 0 && (
@@ -137,6 +192,31 @@ export function ShortagesQueuePage() {
         onConfirm={async (motivo) => {
           if (!cancelando) return;
           await cancelMutation.mutateAsync({ id: cancelando.id, motivo });
+        }}
+      />
+
+      <DistribuidoraPickerModal
+        open={!!escolhendoDistribuidora}
+        distribuidoras={distribuidorasAtivas}
+        pecaNome={escolhendoDistribuidora?.shortage.nomePeca}
+        distribuidoraAtualId={escolhendoDistribuidora?.shortage.distribuidoraId}
+        skipLabel={
+          escolhendoDistribuidora?.modo === 'correcao' ? 'Remover distribuidora' : 'Decidir depois'
+        }
+        onClose={() => setEscolhendoDistribuidora(null)}
+        onConfirm={async (distribuidoraId) => {
+          if (!escolhendoDistribuidora) return;
+          const { shortage, modo } = escolhendoDistribuidora;
+          if (modo === 'transicao') {
+            await transitionMutation.mutateAsync({
+              id: shortage.id,
+              novoStatus: ShortageStatus.COMPRADA,
+              distribuidoraId: distribuidoraId ?? undefined,
+            });
+          } else {
+            await setDistribuidoraMutation.mutateAsync({ id: shortage.id, distribuidoraId });
+          }
+          setEscolhendoDistribuidora(null);
         }}
       />
     </div>

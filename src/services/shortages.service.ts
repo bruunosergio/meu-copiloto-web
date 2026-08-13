@@ -11,6 +11,8 @@ export interface CreateShortagePayload {
 export interface TransitionPayload {
   novoStatus: ShortageStatus;
   motivo?: string;
+  /** So aceito ao transicionar para COMPRADA. */
+  distribuidoraId?: string;
 }
 
 export const shortagesService = {
@@ -30,6 +32,12 @@ export const shortagesService = {
   },
   cancel: async (id: string, motivo: string): Promise<Shortage> => {
     const { data } = await apiClient.patch<Shortage>(`/shortages/${id}/cancel`, { motivo });
+    return data;
+  },
+  setDistribuidora: async (id: string, distribuidoraId: string | null): Promise<Shortage> => {
+    const { data } = await apiClient.patch<Shortage>(`/shortages/${id}/distribuidora`, {
+      distribuidoraId,
+    });
     return data;
   },
 };
