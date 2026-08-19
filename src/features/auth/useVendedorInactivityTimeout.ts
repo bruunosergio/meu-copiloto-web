@@ -4,7 +4,7 @@ import { Role, User } from '../../domain';
 import { useAuth } from './AuthContext';
 
 /** Terminal compartilhado: depois disso sem interação, volta ao seletor de nomes (ver ADR-0007 do backend). */
-const INATIVIDADE_LIMITE_MS = 5 * 60 * 1000;
+const INATIVIDADE_LIMITE_MS = 2 * 60 * 1000;
 const EVENTOS_DE_ATIVIDADE = ['mousedown', 'mousemove', 'keydown', 'touchstart', 'scroll'] as const;
 
 /**
