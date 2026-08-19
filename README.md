@@ -18,7 +18,7 @@ cp .env.example .env   # ajuste VITE_API_URL se o backend rodar em outra porta/h
 npm run dev
 ```
 
-O app sobe em `http://localhost:5173`. Faça login com o usuário admin criado pelo `npm run seed` do backend.
+O app sobe em `http://localhost:5173`. Admin/comprador fazem login com e-mail+senha (`/login`, credenciais do `npm run seed` do backend). Vendedor abre o terminal da loja em `/loja` com o código+senha do `npm run seed` (`SEED_STORE_CODIGO`/`SEED_STORE_SENHA`) e depois escolhe o próprio nome + PIN — ver [ADR-0007](../meu-copiloto-backend/docs/adr/0007-login-loja-e-pin-vendedor.md) do backend.
 
 ### Scripts
 
@@ -41,8 +41,10 @@ src/
 │   ├── shortages.service.ts
 │   └── distribuidoras.service.ts
 ├── features/
-│   ├── auth/                          LoginPage, AuthContext (sessao), ProtectedRoute (guarda por papel)
-│   ├── users/                         UsersPage + UserFormModal (CRUD de usuarios, admin)
+│   ├── auth/                          LoginPage (admin/comprador), StoreLoginPage + VendedorPickerPage (terminal da loja + PIN),
+│   │                                  AuthContext (sessao pessoal + sessao do terminal), useVendedorInactivityTimeout,
+│   │                                  ProtectedRoute (guarda por papel)
+│   ├── users/                         UsersPage + UserFormModal (CRUD de usuarios, admin — campos condicionais por papel)
 │   ├── distribuidoras/                DistribuidorasPage (cadastro/desativacao de fornecedores, admin)
 │   └── shortages/                     RegisterShortagePage, ShortagesQueuePage, ShortageListRow, CancelShortageModal, DistribuidoraPickerModal
 ├── components/                        Button, Input, Select, Modal, StatusBadge, CollapsibleSection, Layout (nav por papel)
@@ -55,13 +57,24 @@ Regra de organização: paginas e componentes **nunca chamam `axios` diretamente
 
 | Rota | Quem acessa | O que faz |
 |---|---|---|
-| `/login` | público | Autenticação |
+| `/login` | público | Login pessoal (e-mail+senha) — ADMIN e COMPRADOR |
+| `/loja` | público | Abre a sessão do terminal compartilhado da loja (código+senha, definidos pelo admin) — passo 1 do login do vendedor |
+| `/loja/vendedores` | sessão de terminal ativa | Grade com o nome de cada vendedor ativo + teclado numérico de PIN (4-6 dígitos) — passo 2/3 do login do vendedor. Sem sessão de terminal, volta para `/loja`. |
 | `/faltas` | todos | Fila de faltas em lista (linhas), agrupada em seções por status (Registrada, Em cotação, Comprada — cada uma expansível/recolhível) e com busca por código/nome. Vendedor só vê as próprias faltas (filtrado pelo backend); admin/comprador veem a fila completa. Botões de avançar status e cancelar aparecem conforme o papel e as regras de `docs/02-modelo-dominio.md` do backend. Ao clicar em "Marcar como comprada", abre o `DistribuidoraPickerModal` — uma grade de botões (1 clique) para escolher a distribuidora vencedora da cotação; é opcional ("Decidir depois" avança sem escolher) e pode ser definida/corrigida depois direto na linha da falta (link "definir"/"trocar"). |
-| `/faltas/registrar` | todos | Formulário de registro manual de falta (fallback web ao WhatsApp da Fase 2) |
-| `/usuarios` | ADMIN | CRUD de usuários da loja |
+| `/faltas/registrar` | todos | Formulário de registro manual de falta (fallback web ao WhatsApp da Fase 2). Para VENDEDOR, ao registrar com sucesso o terminal volta automaticamente para `/loja/vendedores` (o próximo vendedor não herda a sessão anterior). |
+| `/usuarios` | ADMIN | CRUD de usuários da loja — formulário muda os campos conforme o papel escolhido: ADMIN/COMPRADOR pedem e-mail+senha, VENDEDOR pede usuário+PIN |
 | `/distribuidoras` | ADMIN | Cadastro de distribuidoras/fornecedores usados no seletor de cotação. Desativar em vez de excluir — preserva o histórico das faltas que já usaram aquela distribuidora. |
 
 A fila atualiza a cada 15s (`refetchInterval` do TanStack Query) — suficiente para o MVP de uma loja; um WebSocket/SSE pode substituir isso numa fase futura se a necessidade de tempo real justificar.
+
+### Sessão do vendedor no terminal compartilhado
+
+O balcão costuma ter um único computador para vários vendedores durante o turno. Por isso a sessão do vendedor (diferente da sessão do terminal, que fica aberta o turno todo) é deliberadamente curta e devolve à tela de seleção de nomes (`/loja/vendedores`) em dois casos, o que vier primeiro (ver [ADR-0007](../meu-copiloto-backend/docs/adr/0007-login-loja-e-pin-vendedor.md) do backend):
+
+- **~5 minutos de inatividade** — `useVendedorInactivityTimeout` reinicia um timer a cada clique/toque/tecla e chama `trocarVendedor()` ao expirar.
+- **Logo após registrar 1 falta** — `RegisterShortagePage` devolve ao seletor automaticamente (com uma breve confirmação na tela).
+
+Em ambos os casos, `trocarVendedor()` limpa só o token pessoal do vendedor — a sessão do terminal (`storeToken`) continua válida, então o próximo vendedor não precisa digitar o código+senha da loja de novo.
 
 ## Como implementar uma nova feature
 

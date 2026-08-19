@@ -3,11 +3,17 @@ import { Button, Input, Modal, Select } from '../../components';
 import { Role, ROLE_LABEL, User } from '../../domain';
 import { extractErrorMessage } from '../../lib/api-client';
 
+/**
+ * ADMIN/COMPRADOR usam email+senha; VENDEDOR usa usuario+PIN — nunca os dois
+ * conjuntos ao mesmo tempo (ver ADR-0007 do backend).
+ */
 export interface UserFormValues {
   nome: string;
+  papel: Role;
   email: string;
   senha: string;
-  papel: Role;
+  usuario: string;
+  pin: string;
   telefoneWhatsapp: string;
 }
 
@@ -20,9 +26,11 @@ interface UserFormModalProps {
 
 const EMPTY_VALUES: UserFormValues = {
   nome: '',
+  papel: Role.VENDEDOR,
   email: '',
   senha: '',
-  papel: Role.VENDEDOR,
+  usuario: '',
+  pin: '',
   telefoneWhatsapp: '',
 };
 
@@ -37,9 +45,11 @@ export function UserFormModal({ open, editingUser, onClose, onSubmit }: UserForm
       editingUser
         ? {
             nome: editingUser.nome,
-            email: editingUser.email,
-            senha: '',
             papel: editingUser.papel,
+            email: editingUser.email ?? '',
+            senha: '',
+            usuario: editingUser.usuario ?? '',
+            pin: '',
             telefoneWhatsapp: editingUser.telefoneWhatsapp ?? '',
           }
         : EMPTY_VALUES,
@@ -67,6 +77,8 @@ export function UserFormModal({ open, editingUser, onClose, onSubmit }: UserForm
     }
   }
 
+  const isVendedor = values.papel === Role.VENDEDOR;
+
   return (
     <Modal open={open} title={editingUser ? 'Editar usuário' : 'Novo usuário'} onClose={handleClose}>
       <form onSubmit={handleSubmit} className="flex flex-col gap-3">
@@ -75,27 +87,6 @@ export function UserFormModal({ open, editingUser, onClose, onSubmit }: UserForm
           value={values.nome}
           onChange={(e) => setValues((v) => ({ ...v, nome: e.target.value }))}
           required
-        />
-        <Input
-          label="E-mail"
-          type="email"
-          value={values.email}
-          onChange={(e) => setValues((v) => ({ ...v, email: e.target.value }))}
-          required
-        />
-        <Input
-          label={editingUser ? 'Nova senha (deixe em branco para manter)' : 'Senha'}
-          type="password"
-          value={values.senha}
-          onChange={(e) => setValues((v) => ({ ...v, senha: e.target.value }))}
-          required={!editingUser}
-          minLength={8}
-        />
-        <Input
-          label="Telefone WhatsApp (opcional)"
-          placeholder="5511999990000"
-          value={values.telefoneWhatsapp}
-          onChange={(e) => setValues((v) => ({ ...v, telefoneWhatsapp: e.target.value }))}
         />
         <Select
           label="Papel"
@@ -108,6 +99,60 @@ export function UserFormModal({ open, editingUser, onClose, onSubmit }: UserForm
             </option>
           ))}
         </Select>
+
+        {isVendedor ? (
+          <>
+            <Input
+              label="Usuário (nome curto exibido no terminal da loja)"
+              placeholder="Ex.: joao"
+              value={values.usuario}
+              onChange={(e) => setValues((v) => ({ ...v, usuario: e.target.value }))}
+              required
+              minLength={3}
+              maxLength={20}
+            />
+            <Input
+              label={editingUser ? 'Novo PIN (deixe em branco para manter)' : 'PIN (4 a 6 dígitos)'}
+              type="password"
+              inputMode="numeric"
+              pattern="\d{4,6}"
+              value={values.pin}
+              onChange={(e) => setValues((v) => ({ ...v, pin: e.target.value }))}
+              required={!editingUser}
+              minLength={4}
+              maxLength={6}
+            />
+            <p className="text-xs text-slate-400">
+              O vendedor abre o terminal da loja e escolhe o próprio nome + esse PIN — não usa
+              e-mail nem senha.
+            </p>
+          </>
+        ) : (
+          <>
+            <Input
+              label="E-mail"
+              type="email"
+              value={values.email}
+              onChange={(e) => setValues((v) => ({ ...v, email: e.target.value }))}
+              required
+            />
+            <Input
+              label={editingUser ? 'Nova senha (deixe em branco para manter)' : 'Senha'}
+              type="password"
+              value={values.senha}
+              onChange={(e) => setValues((v) => ({ ...v, senha: e.target.value }))}
+              required={!editingUser}
+              minLength={8}
+            />
+          </>
+        )}
+
+        <Input
+          label="Telefone WhatsApp (opcional)"
+          placeholder="5511999990000"
+          value={values.telefoneWhatsapp}
+          onChange={(e) => setValues((v) => ({ ...v, telefoneWhatsapp: e.target.value }))}
+        />
 
         {error && <p className="text-sm text-red-600">{error}</p>}
 

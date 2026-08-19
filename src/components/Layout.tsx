@@ -1,6 +1,7 @@
-import { NavLink, Outlet } from 'react-router-dom';
+import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { Role, ROLE_LABEL } from '../domain';
 import { useAuth } from '../features/auth/AuthContext';
+import { useVendedorInactivityTimeout } from '../features/auth/useVendedorInactivityTimeout';
 import { Button } from './Button';
 
 const linkClasses = ({ isActive }: { isActive: boolean }) =>
@@ -9,9 +10,21 @@ const linkClasses = ({ isActive }: { isActive: boolean }) =>
   }`;
 
 export function Layout() {
-  const { user, logout } = useAuth();
+  const { user, logout, trocarVendedor } = useAuth();
+  const navigate = useNavigate();
+  useVendedorInactivityTimeout(user);
 
   if (!user) return null;
+
+  function handleSair() {
+    if (user!.papel === Role.VENDEDOR) {
+      // Mantem a sessao do terminal aberta - so devolve ao seletor de nomes.
+      trocarVendedor();
+      navigate('/loja/vendedores', { replace: true });
+    } else {
+      logout();
+    }
+  }
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -42,8 +55,8 @@ export function Layout() {
             <span className="text-sm text-slate-500">
               {user.nome} <span className="text-slate-400">· {ROLE_LABEL[user.papel]}</span>
             </span>
-            <Button variant="secondary" onClick={logout}>
-              Sair
+            <Button variant="secondary" onClick={handleSair}>
+              {user.papel === Role.VENDEDOR ? 'Trocar vendedor' : 'Sair'}
             </Button>
           </div>
         </div>

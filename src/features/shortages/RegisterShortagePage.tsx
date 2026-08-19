@@ -1,13 +1,18 @@
 import { FormEvent, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button, Input } from '../../components';
+import { Role } from '../../domain';
 import { extractErrorMessage } from '../../lib/api-client';
 import { shortagesService } from '../../services';
+import { useAuth } from '../auth/AuthContext';
 
 const EMPTY_FORM = { codigoPeca: '', nomePeca: '', qtdRestante: '0', observacao: '' };
+/** Tempo para o vendedor ler a confirmação antes de voltar ao seletor de nomes. */
+const VOLTA_AO_SELETOR_MS = 1500;
 
 export function RegisterShortagePage() {
   const navigate = useNavigate();
+  const { user, trocarVendedor } = useAuth();
   const [form, setForm] = useState(EMPTY_FORM);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
@@ -27,6 +32,16 @@ export function RegisterShortagePage() {
       });
       setForm(EMPTY_FORM);
       setSuccess(true);
+
+      // Terminal compartilhado: cada falta registrada devolve o vendedor ao
+      // seletor de nomes, para o proximo vendedor nao herdar a sessao dele
+      // (ver ADR-0007 do backend).
+      if (user?.papel === Role.VENDEDOR) {
+        setTimeout(() => {
+          trocarVendedor();
+          navigate('/loja/vendedores', { replace: true });
+        }, VOLTA_AO_SELETOR_MS);
+      }
     } catch (err) {
       setError(extractErrorMessage(err));
     } finally {
@@ -75,6 +90,7 @@ export function RegisterShortagePage() {
         {success && (
           <p className="text-sm text-green-700">
             Falta registrada! Ela já está na fila do comprador.
+            {user?.papel === Role.VENDEDOR && ' Voltando para a tela de seleção...'}
           </p>
         )}
 

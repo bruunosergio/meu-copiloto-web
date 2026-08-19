@@ -12,16 +12,32 @@ export enum ShortageStatus {
   CANCELADA = 'CANCELADA',
 }
 
+/**
+ * ADMIN/COMPRADOR tem email (nunca usuario); VENDEDOR tem usuario (nunca email) -
+ * ver ADR-0007 do backend.
+ */
 export interface User {
   id: string;
   storeId: string;
   nome: string;
-  email: string;
+  email: string | null;
+  usuario: string | null;
   telefoneWhatsapp: string | null;
   papel: Role;
   ativo: boolean;
   criadoEm: string;
   atualizadoEm: string;
+}
+
+export interface StoreInfo {
+  id: string;
+  nome: string;
+  codigo: string;
+}
+
+export interface VendedorSummary {
+  id: string;
+  nome: string;
 }
 
 export interface Shortage {

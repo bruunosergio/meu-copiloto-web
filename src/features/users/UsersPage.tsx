@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Button } from '../../components';
-import { ROLE_LABEL, User } from '../../domain';
+import { ROLE_LABEL, Role, User } from '../../domain';
 import { extractErrorMessage } from '../../lib/api-client';
 import { UpdateUserPayload, usersService } from '../../services';
 import { UserFormModal, UserFormValues } from './UserFormModal';
@@ -45,24 +45,28 @@ export function UsersPage() {
   }
 
   async function handleSubmit(values: UserFormValues) {
+    const isVendedor = values.papel === Role.VENDEDOR;
+
     if (editingUser) {
       await updateMutation.mutateAsync({
         id: editingUser.id,
         payload: {
           nome: values.nome,
-          email: values.email,
           papel: values.papel,
           telefoneWhatsapp: values.telefoneWhatsapp || null,
-          ...(values.senha ? { senha: values.senha } : {}),
+          ...(isVendedor
+            ? { usuario: values.usuario, ...(values.pin ? { pin: values.pin } : {}) }
+            : { email: values.email, ...(values.senha ? { senha: values.senha } : {}) }),
         },
       });
     } else {
       await createMutation.mutateAsync({
         nome: values.nome,
-        email: values.email,
-        senha: values.senha,
         papel: values.papel,
         telefoneWhatsapp: values.telefoneWhatsapp || undefined,
+        ...(isVendedor
+          ? { usuario: values.usuario, pin: values.pin }
+          : { email: values.email, senha: values.senha }),
       });
     }
   }
@@ -81,7 +85,7 @@ export function UsersPage() {
           <thead className="bg-slate-50 text-slate-500">
             <tr>
               <th className="px-4 py-2 font-medium">Nome</th>
-              <th className="px-4 py-2 font-medium">E-mail</th>
+              <th className="px-4 py-2 font-medium">E-mail / Usuário</th>
               <th className="px-4 py-2 font-medium">Papel</th>
               <th className="px-4 py-2 font-medium">WhatsApp</th>
               <th className="px-4 py-2 font-medium">Status</th>
@@ -106,7 +110,13 @@ export function UsersPage() {
             {users?.map((user) => (
               <tr key={user.id}>
                 <td className="px-4 py-2">{user.nome}</td>
-                <td className="px-4 py-2">{user.email}</td>
+                <td className="px-4 py-2">
+                  {user.papel === Role.VENDEDOR ? (
+                    <span className="text-slate-500">@{user.usuario}</span>
+                  ) : (
+                    user.email
+                  )}
+                </td>
                 <td className="px-4 py-2">{ROLE_LABEL[user.papel]}</td>
                 <td className="px-4 py-2">{user.telefoneWhatsapp ?? '—'}</td>
                 <td className="px-4 py-2">

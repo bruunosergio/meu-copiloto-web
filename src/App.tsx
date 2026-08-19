@@ -1,6 +1,8 @@
 import { Navigate, Route, Routes } from 'react-router-dom';
 import { Layout } from './components/Layout';
 import { LoginPage } from './features/auth/LoginPage';
+import { StoreLoginPage } from './features/auth/StoreLoginPage';
+import { VendedorPickerPage } from './features/auth/VendedorPickerPage';
 import { ProtectedRoute } from './features/auth/ProtectedRoute';
 import { Role } from './domain';
 import { UsersPage } from './features/users/UsersPage';
@@ -12,6 +14,8 @@ export default function App() {
   return (
     <Routes>
       <Route path="/login" element={<LoginPage />} />
+      <Route path="/loja" element={<StoreLoginPage />} />
+      <Route path="/loja/vendedores" element={<VendedorPickerPage />} />
 
       <Route element={<ProtectedRoute />}>
         <Route element={<Layout />}>
