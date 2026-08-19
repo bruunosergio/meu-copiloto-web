@@ -50,15 +50,17 @@ export function RegisterShortagePage() {
         <Input
           label="Código da peça (se souber)"
           value={form.codigoPeca}
-          onChange={(e) => setForm((f) => ({ ...f, codigoPeca: e.target.value }))}
+          onChange={(e) => setForm((f) => ({ ...f, codigoPeca: e.target.value.toUpperCase() }))}
           placeholder="Ex.: FR-5548"
+          className="uppercase"
         />
         <Input
           label="Nome da peça"
           value={form.nomePeca}
-          onChange={(e) => setForm((f) => ({ ...f, nomePeca: e.target.value }))}
-          placeholder="Ex.: Filtro de óleo Fram PH5548"
+          onChange={(e) => setForm((f) => ({ ...f, nomePeca: e.target.value.toUpperCase() }))}
+          placeholder="Ex.: FILTRO DE ÓLEO FRAM PH5548"
           required
+          className="uppercase"
         />
         <Input
           label="Quantidade que ficou no estoque"
