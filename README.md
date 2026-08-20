@@ -39,14 +39,17 @@ src/
 │   ├── auth.service.ts
 │   ├── users.service.ts
 │   ├── shortages.service.ts
-│   └── distribuidoras.service.ts
+│   ├── distribuidoras.service.ts
+│   ├── emprestimos.service.ts
+│   └── tarefas.service.ts
 ├── features/
-│   ├── auth/                          LoginPage (admin/comprador), StoreLoginPage + VendedorPickerPage (terminal da loja + PIN),
-│   │                                  AuthContext (sessao pessoal + sessao do terminal), useVendedorInactivityTimeout,
-│   │                                  ProtectedRoute (guarda por papel)
-│   ├── users/                         UsersPage + UserFormModal (CRUD de usuarios, admin — campos condicionais por papel)
-│   ├── distribuidoras/                DistribuidorasPage (cadastro/desativacao de fornecedores, admin)
-│   └── shortages/                     RegisterShortagePage, ShortagesQueuePage, ShortageListRow, CancelShortageModal, DistribuidoraPickerModal
+│   ├── auth/                          LoginPage (admin/gerente/comprador), StoreLoginPage + VendedorPickerPage,
+│   │                                  AuthContext, useVendedorInactivityTimeout, ProtectedRoute
+│   ├── users/                         UsersPage + UserFormModal (CRUD, admin — campos condicionais por papel)
+│   ├── distribuidoras/                DistribuidorasPage (cadastro/desativacao, admin)
+│   ├── shortages/                     RegisterShortagePage, ShortagesQueuePage, ShortageListRow, CancelShortageModal, DistribuidoraPickerModal
+│   ├── emprestimos/                   EmprestimosPage (pendentes + histórico de devolução, lote)
+│   └── tarefas/                       TarefasPage (quadro + sprints, admin/gerente)
 ├── components/                        Button, Input, Select, Modal, StatusBadge, CollapsibleSection, Layout (nav por papel)
 └── lib/                                api-client (axios + interceptors), query-client, storage (sessao), format
 ```
@@ -57,13 +60,15 @@ Regra de organização: paginas e componentes **nunca chamam `axios` diretamente
 
 | Rota | Quem acessa | O que faz |
 |---|---|---|
-| `/login` | público | Login pessoal (e-mail+senha) — ADMIN e COMPRADOR |
+| `/login` | público | Login pessoal (e-mail+senha) — ADMIN, GERENTE e COMPRADOR |
 | `/loja` | público | Abre a sessão do terminal compartilhado da loja (código+senha, definidos pelo admin) — passo 1 do login do vendedor |
 | `/loja/vendedores` | sessão de terminal ativa | Grade com o nome de cada vendedor ativo + teclado numérico de PIN (4-6 dígitos) — passo 2/3 do login do vendedor. Sem sessão de terminal, volta para `/loja`. |
-| `/faltas` | todos | Fila de faltas em lista (linhas), agrupada em seções por status (Registrada, Em cotação, Comprada — cada uma expansível/recolhível) e com busca por código/nome. Vendedor só vê as próprias faltas (filtrado pelo backend); admin/comprador veem a fila completa. Botões de avançar status e cancelar aparecem conforme o papel e as regras de `docs/02-modelo-dominio.md` do backend. Ao clicar em "Marcar como comprada", abre o `DistribuidoraPickerModal` — uma grade de botões (1 clique) para escolher a distribuidora vencedora da cotação; é opcional ("Decidir depois" avança sem escolher) e pode ser definida/corrigida depois direto na linha da falta (link "definir"/"trocar"). |
-| `/faltas/registrar` | todos | Formulário de registro manual de falta (fallback web ao WhatsApp da Fase 2). VENDEDOR permanece na tela após registrar — pode cadastrar várias faltas seguidas no mesmo atendimento sem escolher o nome de novo. |
-| `/usuarios` | ADMIN | CRUD de usuários da loja — formulário muda os campos conforme o papel escolhido: ADMIN/COMPRADOR pedem e-mail+senha, VENDEDOR pede usuário+PIN |
-| `/distribuidoras` | ADMIN | Cadastro de distribuidoras/fornecedores usados no seletor de cotação. Desativar em vez de excluir — preserva o histórico das faltas que já usaram aquela distribuidora. |
+| `/faltas` | todos | Fila em lista, seções Registrada e Concluída (recebidas/canceladas opcionais). Cada linha mostra nome de quem registrou + data/hora. ADMIN/GERENTE/COMPRADOR selecionam várias peças para **marcar como concluídas** (abre o seletor de distribuidora, uma para o lote) ou **marcar como recebidas**. “Marcar como concluída” numa linha também abre o picker (opcional, “Decidir depois”). Selo “Emprestada” quando a peça está na lista de empréstimos. |
+| `/faltas/registrar` | todos | Formulário de registro. Checkbox “Peça emprestada de loja parceira” cria o empréstimo junto. VENDEDOR permanece na tela após registrar. |
+| `/emprestimos` | todos | Pendentes com seleção em lote para devolver (quem/para quem/quando). Histórico das devolvidas. Vendedor também devolve. |
+| `/tarefas` | ADMIN e GERENTE | Quadro A fazer / Em andamento / Concluída, com sprints opcionais. |
+| `/usuarios` | ADMIN | CRUD de usuários — ADMIN/COMPRADOR/GERENTE pedem e-mail+senha, VENDEDOR pede usuário+PIN |
+| `/distribuidoras` | ADMIN | Cadastro de distribuidoras. Desativar em vez de excluir. |
 
 A fila atualiza a cada 15s (`refetchInterval` do TanStack Query) — suficiente para o MVP de uma loja; um WebSocket/SSE pode substituir isso numa fase futura se a necessidade de tempo real justificar.
 

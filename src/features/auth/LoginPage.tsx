@@ -33,7 +33,7 @@ export function LoginPage() {
       <div className="w-full max-w-sm rounded-lg bg-white p-8 shadow-sm">
         <h1 className="mb-1 text-2xl font-semibold text-slate-900">Meu Copiloto</h1>
         <p className="mb-6 text-sm text-slate-500">
-          Entre com seu e-mail e senha (administrador ou comprador).
+          Entre com seu e-mail e senha (administrador, gerente ou comprador).
         </p>
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">

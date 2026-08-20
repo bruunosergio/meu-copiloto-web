@@ -4,7 +4,7 @@ import { Role, ROLE_LABEL, User } from '../../domain';
 import { extractErrorMessage } from '../../lib/api-client';
 
 /**
- * ADMIN/COMPRADOR usam email+senha; VENDEDOR usa usuario+PIN — nunca os dois
+ * ADMIN/COMPRADOR/GERENTE usam email+senha; VENDEDOR usa usuario+PIN — nunca os dois
  * conjuntos ao mesmo tempo (ver ADR-0007 do backend).
  */
 export interface UserFormValues {

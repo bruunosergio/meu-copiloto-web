@@ -9,6 +9,8 @@ import { UsersPage } from './features/users/UsersPage';
 import { DistribuidorasPage } from './features/distribuidoras/DistribuidorasPage';
 import { RegisterShortagePage } from './features/shortages/RegisterShortagePage';
 import { ShortagesQueuePage } from './features/shortages/ShortagesQueuePage';
+import { EmprestimosPage } from './features/emprestimos/EmprestimosPage';
+import { TarefasPage } from './features/tarefas/TarefasPage';
 
 export default function App() {
   return (
@@ -22,6 +24,11 @@ export default function App() {
           <Route path="/" element={<Navigate to="/faltas" replace />} />
           <Route path="/faltas" element={<ShortagesQueuePage />} />
           <Route path="/faltas/registrar" element={<RegisterShortagePage />} />
+          <Route path="/emprestimos" element={<EmprestimosPage />} />
+
+          <Route element={<ProtectedRoute allowedRoles={[Role.ADMIN, Role.GERENTE]} />}>
+            <Route path="/tarefas" element={<TarefasPage />} />
+          </Route>
 
           <Route element={<ProtectedRoute allowedRoles={[Role.ADMIN]} />}>
             <Route path="/usuarios" element={<UsersPage />} />

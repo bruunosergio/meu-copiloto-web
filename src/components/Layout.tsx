@@ -1,5 +1,5 @@
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
-import { Role, ROLE_LABEL } from '../domain';
+import { Role, ROLE_LABEL, podeGerenciarTarefas } from '../domain';
 import { useAuth } from '../features/auth/AuthContext';
 import { useVendedorInactivityTimeout } from '../features/auth/useVendedorInactivityTimeout';
 import { Button } from './Button';
@@ -39,6 +39,14 @@ export function Layout() {
               <NavLink to="/faltas/registrar" className={linkClasses}>
                 Registrar Falta
               </NavLink>
+              <NavLink to="/emprestimos" className={linkClasses}>
+                Empréstimos
+              </NavLink>
+              {podeGerenciarTarefas(user.papel) && (
+                <NavLink to="/tarefas" className={linkClasses}>
+                  Tarefas
+                </NavLink>
+              )}
               {user.papel === Role.ADMIN && (
                 <>
                   <NavLink to="/usuarios" className={linkClasses}>

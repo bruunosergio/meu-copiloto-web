@@ -1,25 +1,31 @@
 import { Button, StatusBadge } from '../../components';
-import { Role, Shortage, ShortageStatus } from '../../domain';
-import { formatDateTime, formatRelativeAge } from '../../lib/format';
+import { Role, Shortage, ShortageStatus, podeGerenciarFilaCompleta } from '../../domain';
+import { formatDateTime } from '../../lib/format';
 
 interface ShortageListRowProps {
   shortage: Shortage;
   currentUserId: string;
   currentUserRole: Role;
   distribuidoraNome?: string;
+  emprestada?: boolean;
   podeEditarDistribuidora: boolean;
+  selectable?: boolean;
+  selected?: boolean;
+  onToggleSelect?: (shortage: Shortage) => void;
   onAdvance: (shortage: Shortage, novoStatus: ShortageStatus) => void;
   onCancel: (shortage: Shortage) => void;
   onEditDistribuidora: (shortage: Shortage) => void;
   isMutating: boolean;
 }
 
-const STATUS_COM_DISTRIBUIDORA: ShortageStatus[] = [ShortageStatus.COMPRADA, ShortageStatus.RECEBIDA];
+const STATUS_COM_DISTRIBUIDORA: ShortageStatus[] = [
+  ShortageStatus.CONCLUIDA,
+  ShortageStatus.RECEBIDA,
+];
 
 const NEXT_STATUS: Partial<Record<ShortageStatus, { status: ShortageStatus; label: string }>> = {
-  [ShortageStatus.REGISTRADA]: { status: ShortageStatus.EM_COTACAO, label: 'Iniciar cotação' },
-  [ShortageStatus.EM_COTACAO]: { status: ShortageStatus.COMPRADA, label: 'Marcar como comprada' },
-  [ShortageStatus.COMPRADA]: { status: ShortageStatus.RECEBIDA, label: 'Marcar como recebida' },
+  [ShortageStatus.REGISTRADA]: { status: ShortageStatus.CONCLUIDA, label: 'Marcar como concluída' },
+  [ShortageStatus.CONCLUIDA]: { status: ShortageStatus.RECEBIDA, label: 'Marcar como recebida' },
 };
 
 export function ShortageListRow({
@@ -27,31 +33,52 @@ export function ShortageListRow({
   currentUserId,
   currentUserRole,
   distribuidoraNome,
+  emprestada = false,
   podeEditarDistribuidora,
+  selectable = false,
+  selected = false,
+  onToggleSelect,
   onAdvance,
   onCancel,
   onEditDistribuidora,
   isMutating,
 }: ShortageListRowProps) {
-  const podeGerenciarFilaCompleta = currentUserRole === Role.ADMIN || currentUserRole === Role.COMPRADOR;
+  const podeGerenciar = podeGerenciarFilaCompleta(currentUserRole);
   const proximo = NEXT_STATUS[shortage.status];
   const mostrarDistribuidora = STATUS_COM_DISTRIBUIDORA.includes(shortage.status);
 
   const podeCancelar =
-    podeGerenciarFilaCompleta ||
+    podeGerenciar ||
     (currentUserRole === Role.VENDEDOR &&
       shortage.registradoPorId === currentUserId &&
       shortage.status === ShortageStatus.REGISTRADA);
 
-  const podeCancelarEsteStatus =
-    shortage.status === ShortageStatus.REGISTRADA || shortage.status === ShortageStatus.EM_COTACAO;
+  const podeCancelarEsteStatus = shortage.status === ShortageStatus.REGISTRADA;
 
   return (
     <div className="flex flex-col gap-2 px-4 py-3 sm:flex-row sm:items-center sm:gap-4">
+      {selectable && (
+        <input
+          type="checkbox"
+          className="h-4 w-4 flex-shrink-0 accent-brand-500"
+          checked={selected}
+          onChange={() => onToggleSelect?.(shortage)}
+          aria-label={`Selecionar ${shortage.nomePeca}`}
+        />
+      )}
+
       <div className="min-w-0 sm:w-56 sm:flex-none">
         <p className="truncate font-medium text-slate-900">{shortage.nomePeca}</p>
         {shortage.codigoPeca && (
           <p className="truncate text-xs text-slate-500">Código: {shortage.codigoPeca}</p>
+        )}
+        <p className="truncate text-xs text-slate-400" title={formatDateTime(shortage.criadaEm)}>
+          {shortage.registradoPorNome ?? '—'} · {formatDateTime(shortage.criadaEm)}
+        </p>
+        {emprestada && (
+          <span className="mt-1 inline-block rounded-full bg-orange-100 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-orange-800">
+            Emprestada
+          </span>
         )}
       </div>
 
@@ -87,16 +114,9 @@ export function ShortageListRow({
         </div>
       )}
 
-      <p
-        className="text-xs text-slate-400 sm:w-28 sm:flex-none sm:text-right"
-        title={formatDateTime(shortage.criadaEm)}
-      >
-        há {formatRelativeAge(shortage.criadaEm)}
-      </p>
-
       <div className="flex flex-shrink-0 flex-wrap items-center gap-2 sm:justify-end">
         <StatusBadge status={shortage.status} />
-        {podeGerenciarFilaCompleta && proximo && (
+        {podeGerenciar && proximo && (
           <Button onClick={() => onAdvance(shortage, proximo.status)} disabled={isMutating}>
             {proximo.label}
           </Button>

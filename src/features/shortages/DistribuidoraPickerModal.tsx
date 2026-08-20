@@ -7,6 +7,7 @@ interface DistribuidoraPickerModalProps {
   open: boolean;
   distribuidoras: Distribuidora[];
   pecaNome?: string;
+  title?: string;
   distribuidoraAtualId?: string | null;
   /** Rotulo do botao de pular/limpar; controla o texto conforme o contexto (transicao vs. correcao). */
   skipLabel: string;
@@ -23,6 +24,7 @@ export function DistribuidoraPickerModal({
   open,
   distribuidoras,
   pecaNome,
+  title,
   distribuidoraAtualId,
   skipLabel,
   onClose,
@@ -60,7 +62,9 @@ export function DistribuidoraPickerModal({
   return (
     <Modal
       open={open}
-      title={pecaNome ? `Quem venceu a cotação de "${pecaNome}"?` : 'Escolher distribuidora'}
+      title={
+        title ?? (pecaNome ? `Quem venceu a cotação de "${pecaNome}"?` : 'Escolher distribuidora')
+      }
       onClose={onClose}
     >
       <div className="flex flex-col gap-3">

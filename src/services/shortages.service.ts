@@ -6,12 +6,21 @@ export interface CreateShortagePayload {
   qtdRestante: number;
   codigoPeca?: string;
   observacao?: string;
+  emprestada?: boolean;
+  emprestadaDe?: string;
 }
 
 export interface TransitionPayload {
   novoStatus: ShortageStatus;
   motivo?: string;
-  /** So aceito ao transicionar para COMPRADA. */
+  /** So aceito ao transicionar para CONCLUIDA. */
+  distribuidoraId?: string;
+}
+
+export interface BatchTransitionPayload {
+  ids: string[];
+  novoStatus: ShortageStatus;
+  motivo?: string;
   distribuidoraId?: string;
 }
 
@@ -28,6 +37,10 @@ export const shortagesService = {
   },
   transition: async (id: string, payload: TransitionPayload): Promise<Shortage> => {
     const { data } = await apiClient.patch<Shortage>(`/shortages/${id}/status`, payload);
+    return data;
+  },
+  transitionMany: async (payload: BatchTransitionPayload): Promise<Shortage[]> => {
+    const { data } = await apiClient.patch<Shortage[]>('/shortages/status', payload);
     return data;
   },
   cancel: async (id: string, motivo: string): Promise<Shortage> => {

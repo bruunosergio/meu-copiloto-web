@@ -4,7 +4,14 @@ import { Button, Input } from '../../components';
 import { extractErrorMessage } from '../../lib/api-client';
 import { shortagesService } from '../../services';
 
-const EMPTY_FORM = { codigoPeca: '', nomePeca: '', qtdRestante: '0', observacao: '' };
+const EMPTY_FORM = {
+  codigoPeca: '',
+  nomePeca: '',
+  qtdRestante: '0',
+  observacao: '',
+  emprestada: false,
+  emprestadaDe: '',
+};
 
 export function RegisterShortagePage() {
   const navigate = useNavigate();
@@ -24,6 +31,8 @@ export function RegisterShortagePage() {
         nomePeca: form.nomePeca,
         qtdRestante: Number(form.qtdRestante),
         observacao: form.observacao || undefined,
+        emprestada: form.emprestada || undefined,
+        emprestadaDe: form.emprestada ? form.emprestadaDe || undefined : undefined,
       });
       setForm(EMPTY_FORM);
       setSuccess(true);
@@ -76,6 +85,32 @@ export function RegisterShortagePage() {
           onChange={(e) => setForm((f) => ({ ...f, observacao: e.target.value }))}
           placeholder="Ex.: cliente encomendou 2 unidades"
         />
+
+        <label className="flex items-start gap-2 text-sm text-slate-700">
+          <input
+            type="checkbox"
+            className="mt-0.5 h-4 w-4 accent-brand-500"
+            checked={form.emprestada}
+            onChange={(e) =>
+              setForm((f) => ({ ...f, emprestada: e.target.checked, emprestadaDe: e.target.checked ? f.emprestadaDe : '' }))
+            }
+          />
+          <span>
+            Peça emprestada de loja parceira
+            <span className="block text-xs font-normal text-slate-400">
+              Entra na lista de empréstimos até ser devolvida. A falta continua na fila para compra.
+            </span>
+          </span>
+        </label>
+
+        {form.emprestada && (
+          <Input
+            label="Emprestada de (opcional)"
+            value={form.emprestadaDe}
+            onChange={(e) => setForm((f) => ({ ...f, emprestadaDe: e.target.value }))}
+            placeholder="Ex.: Loja do Zé"
+          />
+        )}
 
         {error && <p className="text-sm text-red-600">{error}</p>}
         {success && (
