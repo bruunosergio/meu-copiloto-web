@@ -1,7 +1,7 @@
 import { apiClient } from '../lib/api-client';
 import { Role, User } from '../domain';
 
-/** ADMIN/COMPRADOR usam email+senha; VENDEDOR usa usuario+pin (ver ADR-0007 do backend). */
+/** Todos os papeis pedem usuario+PIN; email+senha e opcional (ADR-0010 do backend). */
 export interface CreateUserPayload {
   nome: string;
   papel: Role;

@@ -8,8 +8,8 @@ const INATIVIDADE_LIMITE_MS = 2 * 60 * 1000;
 const EVENTOS_DE_ATIVIDADE = ['mousedown', 'mousemove', 'keydown', 'touchstart', 'scroll'] as const;
 
 /**
- * So se aplica a VENDEDOR: ADMIN/COMPRADOR usam o painel de qualquer lugar,
- * sem terminal compartilhado, entao nao faz sentido deslogar por inatividade.
+ * So se aplica a VENDEDOR no terminal compartilhado (ADR-0010).
+ * Admin/gerente/comprador permanecem logados com o JWT de 8h.
  */
 export function useVendedorInactivityTimeout(user: User | null) {
   const { trocarVendedor } = useAuth();

@@ -12,6 +12,7 @@ import { extractErrorMessage } from '../../lib/api-client';
 import { distribuidorasService, emprestimosService, shortagesService } from '../../services';
 import { useAuth } from '../auth/AuthContext';
 import { CancelShortageModal } from './CancelShortageModal';
+import { EditShortageModal } from './EditShortageModal';
 import { DistribuidoraPickerModal } from './DistribuidoraPickerModal';
 import { ShortageListRow } from './ShortageListRow';
 
@@ -30,6 +31,7 @@ export function ShortagesQueuePage() {
   const [mostrarArquivo, setMostrarArquivo] = useState(false);
   const [selecionadas, setSelecionadas] = useState<Set<string>>(new Set());
   const [cancelando, setCancelando] = useState<Shortage | null>(null);
+  const [editando, setEditando] = useState<Shortage | null>(null);
   const [escolhendoDistribuidora, setEscolhendoDistribuidora] =
     useState<EscolhaDistribuidora | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
@@ -51,12 +53,12 @@ export function ShortagesQueuePage() {
     refetchInterval: 15000,
   });
 
-  const emprestadaPorShortageId = useMemo(() => {
-    const ids = new Set<string>();
+  const emprestimoPendentePorShortageId = useMemo(() => {
+    const mapa = new Map<string, string>();
     for (const emprestimo of emprestimosPendentes ?? []) {
-      ids.add(emprestimo.shortageId);
+      mapa.set(emprestimo.shortageId, emprestimo.emprestadaDe ?? '');
     }
-    return ids;
+    return mapa;
   }, [emprestimosPendentes]);
 
   const distribuidoraNomePorId = useMemo(() => {
@@ -109,7 +111,10 @@ export function ShortagesQueuePage() {
   const cancelMutation = useMutation({
     mutationFn: ({ id, motivo }: { id: string; motivo: string }) =>
       shortagesService.cancel(id, motivo),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['shortages'] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['shortages'] });
+      queryClient.invalidateQueries({ queryKey: ['emprestimos'] });
+    },
   });
 
   const souGerenciador = !!user && podeGerenciarFilaCompleta(user.papel);
@@ -204,7 +209,7 @@ export function ShortagesQueuePage() {
                   ? distribuidoraNomePorId.get(shortage.distribuidoraId)
                   : undefined
               }
-              emprestada={emprestadaPorShortageId.has(shortage.id)}
+              emprestada={emprestimoPendentePorShortageId.has(shortage.id)}
               podeEditarDistribuidora={souGerenciador}
               selectable={podeSelecionar}
               selected={selecionadas.has(shortage.id)}
@@ -222,6 +227,7 @@ export function ShortagesQueuePage() {
                   : () => {}
               }
               onCancel={podeAgir ? (s) => setCancelando(s) : () => {}}
+              onEdit={podeAgir ? (s) => setEditando(s) : () => {}}
               onEditDistribuidora={(s) => setEscolhendoDistribuidora({ modo: 'correcao', shortage: s })}
             />
           ))}
@@ -308,6 +314,18 @@ export function ShortagesQueuePage() {
         onConfirm={async (motivo) => {
           if (!cancelando) return;
           await cancelMutation.mutateAsync({ id: cancelando.id, motivo });
+        }}
+      />
+
+      <EditShortageModal
+        open={!!editando}
+        shortage={editando}
+        emprestada={editando ? emprestimoPendentePorShortageId.has(editando.id) : false}
+        emprestadaDe={editando ? (emprestimoPendentePorShortageId.get(editando.id) ?? '') : ''}
+        onClose={() => setEditando(null)}
+        onSaved={() => {
+          queryClient.invalidateQueries({ queryKey: ['shortages'] });
+          queryClient.invalidateQueries({ queryKey: ['emprestimos'] });
         }}
       />
 

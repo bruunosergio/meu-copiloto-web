@@ -42,7 +42,7 @@ apiClient.interceptors.response.use(
         authStorage.clearSession();
         // Vendedor com sessao de terminal ainda valida volta ao seletor de
         // nomes, nao ao login pessoal (que nem se aplica a ele).
-        const destino = authStorage.getStoreToken() ? '/loja/vendedores' : '/login';
+        const destino = authStorage.getStoreToken() ? '/loja/vendedores' : '/loja';
         if (window.location.pathname !== destino) {
           window.location.href = destino;
         }

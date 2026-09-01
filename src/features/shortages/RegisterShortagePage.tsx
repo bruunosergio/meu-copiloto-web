@@ -1,6 +1,7 @@
 import { FormEvent, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button, Input } from '../../components';
+import { STATUS_LABEL } from '../../domain';
 import { extractErrorMessage } from '../../lib/api-client';
 import { shortagesService } from '../../services';
 
@@ -17,8 +18,29 @@ export function RegisterShortagePage() {
   const navigate = useNavigate();
   const [form, setForm] = useState(EMPTY_FORM);
   const [error, setError] = useState<string | null>(null);
+  const [aviso, setAviso] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
   const [loading, setLoading] = useState(false);
+
+  function atualizarForm(patch: Partial<typeof EMPTY_FORM>) {
+    setAviso(null);
+    setSuccess(false);
+    setForm((atual) => ({ ...atual, ...patch }));
+  }
+
+  async function persistir() {
+    await shortagesService.register({
+      codigoPeca: form.codigoPeca || undefined,
+      nomePeca: form.nomePeca,
+      qtdRestante: Number(form.qtdRestante),
+      observacao: form.observacao || undefined,
+      emprestada: form.emprestada || undefined,
+      emprestadaDe: form.emprestada ? form.emprestadaDe || undefined : undefined,
+    });
+    setForm(EMPTY_FORM);
+    setAviso(null);
+    setSuccess(true);
+  }
 
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
@@ -26,20 +48,24 @@ export function RegisterShortagePage() {
     setSuccess(false);
     setLoading(true);
     try {
-      await shortagesService.register({
-        codigoPeca: form.codigoPeca || undefined,
-        nomePeca: form.nomePeca,
-        qtdRestante: Number(form.qtdRestante),
-        observacao: form.observacao || undefined,
-        emprestada: form.emprestada || undefined,
-        emprestadaDe: form.emprestada ? form.emprestadaDe || undefined : undefined,
-      });
-      setForm(EMPTY_FORM);
-      setSuccess(true);
+      if (!aviso) {
+        const similares = await shortagesService.similares({
+          nome: form.nomePeca,
+          codigo: form.codigoPeca || undefined,
+        });
+        if (similares.length > 0) {
+          const primeiro = similares[0];
+          setAviso(
+            `Já tem na fila: ${primeiro.nomePeca} (${STATUS_LABEL[primeiro.status]}, ${primeiro.registradoPorNome ?? '—'}). Registrar mesmo assim?`,
+          );
+          return;
+        }
+      }
+      await persistir();
 
       // Fica na propria tela: e comum o vendedor registrar varias faltas
       // seguidas no mesmo atendimento. A volta ao seletor de nomes acontece
-      // so por inatividade (ver useVendedorInactivityTimeout / ADR-0007).
+      // so por inatividade (ver useVendedorInactivityTimeout / ADR-0010).
     } catch (err) {
       setError(extractErrorMessage(err));
     } finally {
@@ -59,14 +85,14 @@ export function RegisterShortagePage() {
         <Input
           label="Código da peça (se souber)"
           value={form.codigoPeca}
-          onChange={(e) => setForm((f) => ({ ...f, codigoPeca: e.target.value.toUpperCase() }))}
+          onChange={(e) => atualizarForm({ codigoPeca: e.target.value.toUpperCase() })}
           placeholder="Ex.: FR-5548"
           className="uppercase"
         />
         <Input
           label="Nome da peça"
           value={form.nomePeca}
-          onChange={(e) => setForm((f) => ({ ...f, nomePeca: e.target.value.toUpperCase() }))}
+          onChange={(e) => atualizarForm({ nomePeca: e.target.value.toUpperCase() })}
           placeholder="Ex.: FILTRO DE ÓLEO FRAM PH5548"
           required
           className="uppercase"
@@ -76,13 +102,13 @@ export function RegisterShortagePage() {
           type="number"
           min={0}
           value={form.qtdRestante}
-          onChange={(e) => setForm((f) => ({ ...f, qtdRestante: e.target.value }))}
+          onChange={(e) => atualizarForm({ qtdRestante: e.target.value })}
           required
         />
         <Input
           label="Observação (opcional)"
           value={form.observacao}
-          onChange={(e) => setForm((f) => ({ ...f, observacao: e.target.value }))}
+          onChange={(e) => atualizarForm({ observacao: e.target.value })}
           placeholder="Ex.: cliente encomendou 2 unidades"
         />
 
@@ -92,7 +118,10 @@ export function RegisterShortagePage() {
             className="mt-0.5 h-4 w-4 accent-brand-500"
             checked={form.emprestada}
             onChange={(e) =>
-              setForm((f) => ({ ...f, emprestada: e.target.checked, emprestadaDe: e.target.checked ? f.emprestadaDe : '' }))
+              atualizarForm({
+                emprestada: e.target.checked,
+                emprestadaDe: e.target.checked ? form.emprestadaDe : '',
+              })
             }
           />
           <span>
@@ -107,11 +136,12 @@ export function RegisterShortagePage() {
           <Input
             label="Emprestada de (opcional)"
             value={form.emprestadaDe}
-            onChange={(e) => setForm((f) => ({ ...f, emprestadaDe: e.target.value }))}
+            onChange={(e) => atualizarForm({ emprestadaDe: e.target.value })}
             placeholder="Ex.: Loja do Zé"
           />
         )}
 
+        {aviso && <p className="text-sm text-amber-700">{aviso}</p>}
         {error && <p className="text-sm text-red-600">{error}</p>}
         {success && (
           <p className="text-sm text-green-700">Falta registrada! Ela já está na fila do comprador.</p>
@@ -122,7 +152,7 @@ export function RegisterShortagePage() {
             Ver fila de faltas
           </Button>
           <Button type="submit" disabled={loading}>
-            {loading ? 'Registrando...' : 'Registrar falta'}
+            {loading ? 'Registrando...' : aviso ? 'Registrar mesmo assim' : 'Registrar falta'}
           </Button>
         </div>
       </form>

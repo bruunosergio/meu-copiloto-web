@@ -14,6 +14,7 @@ interface ShortageListRowProps {
   onToggleSelect?: (shortage: Shortage) => void;
   onAdvance: (shortage: Shortage, novoStatus: ShortageStatus) => void;
   onCancel: (shortage: Shortage) => void;
+  onEdit: (shortage: Shortage) => void;
   onEditDistribuidora: (shortage: Shortage) => void;
   isMutating: boolean;
 }
@@ -40,6 +41,7 @@ export function ShortageListRow({
   onToggleSelect,
   onAdvance,
   onCancel,
+  onEdit,
   onEditDistribuidora,
   isMutating,
 }: ShortageListRowProps) {
@@ -54,6 +56,7 @@ export function ShortageListRow({
       shortage.status === ShortageStatus.REGISTRADA);
 
   const podeCancelarEsteStatus = shortage.status === ShortageStatus.REGISTRADA;
+  const podeEditarFalta = podeCancelar && podeCancelarEsteStatus;
 
   return (
     <div className="flex flex-col gap-2 px-4 py-3 sm:flex-row sm:items-center sm:gap-4">
@@ -119,6 +122,11 @@ export function ShortageListRow({
         {podeGerenciar && proximo && (
           <Button onClick={() => onAdvance(shortage, proximo.status)} disabled={isMutating}>
             {proximo.label}
+          </Button>
+        )}
+        {podeEditarFalta && (
+          <Button variant="ghost" onClick={() => onEdit(shortage)} disabled={isMutating}>
+            Editar
           </Button>
         )}
         {podeCancelar && podeCancelarEsteStatus && (

@@ -24,11 +24,33 @@ interface AuthContextValue {
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
+function userComTokenValido(): User | null {
+  const token = authStorage.getToken();
+  const user = authStorage.getUser<User>();
+  if (!token || !user) {
+    if (user && !token) {
+      authStorage.clearSession();
+    }
+    return null;
+  }
+  return user;
+}
+
+function storeComTokenValido(): StoreInfo | null {
+  const token = authStorage.getStoreToken();
+  const store = authStorage.getStoreInfo<StoreInfo>();
+  if (!token || !store) {
+    if (store && !token) {
+      authStorage.clearStoreSession();
+    }
+    return null;
+  }
+  return store;
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User | null>(() => authStorage.getUser<User>());
-  const [storeInfo, setStoreInfo] = useState<StoreInfo | null>(() =>
-    authStorage.getStoreInfo<StoreInfo>(),
-  );
+  const [user, setUser] = useState<User | null>(() => userComTokenValido());
+  const [storeInfo, setStoreInfo] = useState<StoreInfo | null>(() => storeComTokenValido());
 
   const login = useCallback(async (email: string, senha: string) => {
     const { token, user: loggedUser } = await authService.login(email, senha);
@@ -73,9 +95,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     <AuthContext.Provider
       value={{
         user,
-        isAuthenticated: !!user,
+        isAuthenticated: !!user && !!authStorage.getToken(),
         storeInfo,
-        hasStoreSession: !!storeInfo,
+        hasStoreSession: !!storeInfo && !!authStorage.getStoreToken(),
         login,
         loginLoja,
         listVendedoresLoja,

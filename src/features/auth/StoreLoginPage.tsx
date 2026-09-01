@@ -41,7 +41,7 @@ export function StoreLoginPage() {
       <div className="w-full max-w-sm rounded-lg bg-white p-8 shadow-sm">
         <h1 className="mb-1 text-2xl font-semibold text-slate-900">Meu Copiloto</h1>
         <p className="mb-6 text-sm text-slate-500">
-          Abra o terminal desta loja para os vendedores registrarem faltas.
+          Entre com o código e a senha da loja. Depois cada um escolhe o próprio nome e o PIN.
         </p>
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
@@ -70,10 +70,10 @@ export function StoreLoginPage() {
           </Button>
         </form>
 
-        <p className="mt-6 text-center text-sm text-slate-500">
-          É administrador ou comprador?{' '}
-          <Link to="/login" className="font-medium text-brand-600 hover:underline">
-            Entrar com e-mail e senha
+        <p className="mt-6 text-center text-xs text-slate-400">
+          Acesso de emergência (contas antigas sem PIN):{' '}
+          <Link to="/login" className="underline hover:text-slate-600">
+            e-mail e senha
           </Link>
         </p>
       </div>

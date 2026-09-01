@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Navigate, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { Button } from '../../components';
+import { Role, ROLE_LABEL } from '../../domain';
 import { extractErrorMessage } from '../../lib/api-client';
 import { useAuth } from './AuthContext';
 
@@ -9,10 +10,7 @@ const TECLAS_PIN = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '', '0', 'apaga
 const PIN_MAX = 6;
 
 /**
- * Passo 2+3 do fluxo do vendedor: escolhe o proprio nome numa grade (1 toque)
- * e confirma com um PIN curto num teclado numerico grande, pensado para uso
- * rapido no balcao (ver ADR-0007 do backend). Sem sessao de loja, volta para
- * a tela de abertura do terminal.
+ * Depois da senha da loja: escolhe o nome e confirma o PIN (mouse ou teclado).
  */
 export function VendedorPickerPage() {
   const { hasStoreSession, storeInfo, listVendedoresLoja, loginVendedor, logout } = useAuth();
@@ -29,11 +27,38 @@ export function VendedorPickerPage() {
     enabled: hasStoreSession,
   });
 
+  const vendedorSelecionado = vendedores?.find((v) => v.id === vendedorId) ?? null;
+
+  useEffect(() => {
+    if (!vendedorSelecionado) return;
+
+    function onKeyDown(event: KeyboardEvent) {
+      if (loading) return;
+      if (event.key === 'Backspace') {
+        event.preventDefault();
+        setError(null);
+        setPin((atual) => atual.slice(0, -1));
+        return;
+      }
+      if (event.key === 'Enter') {
+        event.preventDefault();
+        void confirmarPin();
+        return;
+      }
+      if (/^\d$/.test(event.key)) {
+        event.preventDefault();
+        setError(null);
+        setPin((atual) => (atual.length >= PIN_MAX ? atual : atual + event.key));
+      }
+    }
+
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [vendedorSelecionado, pin, loading, vendedorId]);
+
   if (!hasStoreSession) {
     return <Navigate to="/loja" replace />;
   }
-
-  const vendedorSelecionado = vendedores?.find((v) => v.id === vendedorId) ?? null;
 
   function selecionarVendedor(id: string) {
     setVendedorId(id);
@@ -63,8 +88,9 @@ export function VendedorPickerPage() {
     setError(null);
     setLoading(true);
     try {
-      await loginVendedor(vendedorId, pin);
-      navigate('/faltas/registrar', { replace: true });
+      const user = await loginVendedor(vendedorId, pin);
+      const destino = user.papel === Role.VENDEDOR ? '/faltas/registrar' : '/faltas';
+      navigate(destino, { replace: true });
     } catch (err) {
       setError(extractErrorMessage(err));
       setPin('');
@@ -78,7 +104,7 @@ export function VendedorPickerPage() {
       <div className="mb-6 text-center">
         <h1 className="text-xl font-semibold text-slate-900">{storeInfo?.nome}</h1>
         <p className="text-sm text-slate-500">
-          {vendedorSelecionado ? 'Digite seu PIN' : 'Quem é você?'}
+          {vendedorSelecionado ? 'Digite seu PIN (teclado ou mouse)' : 'Quem é você?'}
         </p>
       </div>
 
@@ -90,8 +116,8 @@ export function VendedorPickerPage() {
           )}
           {vendedores && vendedores.length === 0 && (
             <p className="rounded-md bg-white px-4 py-6 text-center text-sm text-slate-500 shadow-sm">
-              Nenhum vendedor cadastrado ainda. Peça a um administrador para cadastrar em
-              "Usuários".
+              Ninguém com PIN cadastrado ainda. Entre pelo acesso de emergência em /login e cadastre
+              o PIN em Usuários.
             </p>
           )}
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
@@ -100,17 +126,21 @@ export function VendedorPickerPage() {
                 key={vendedor.id}
                 type="button"
                 onClick={() => selecionarVendedor(vendedor.id)}
-                className="flex items-center justify-center rounded-lg border border-slate-200 bg-white px-4 py-6 text-center text-base font-medium text-slate-700 shadow-sm transition-colors hover:border-brand-400 hover:bg-brand-50"
+                className="flex flex-col items-center justify-center rounded-lg border border-slate-200 bg-white px-4 py-6 text-center shadow-sm transition-colors hover:border-brand-400 hover:bg-brand-50"
               >
-                {vendedor.nome}
+                <span className="text-base font-medium text-slate-700">{vendedor.nome}</span>
+                <span className="mt-1 text-xs text-slate-400">{ROLE_LABEL[vendedor.papel]}</span>
               </button>
             ))}
           </div>
         </div>
       ) : (
         <div className="w-full max-w-xs">
-          <p className="mb-4 text-center text-lg font-medium text-slate-900">
+          <p className="mb-1 text-center text-lg font-medium text-slate-900">
             {vendedorSelecionado.nome}
+          </p>
+          <p className="mb-4 text-center text-xs text-slate-400">
+            {ROLE_LABEL[vendedorSelecionado.papel]}
           </p>
 
           <div className="mb-4 flex justify-center gap-2">

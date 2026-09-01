@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Button } from '../../components';
-import { ROLE_LABEL, Role, User } from '../../domain';
+import { ROLE_LABEL, User } from '../../domain';
 import { extractErrorMessage } from '../../lib/api-client';
 import { UpdateUserPayload, usersService } from '../../services';
 import { UserFormModal, UserFormValues } from './UserFormModal';
@@ -45,8 +45,6 @@ export function UsersPage() {
   }
 
   async function handleSubmit(values: UserFormValues) {
-    const isVendedor = values.papel === Role.VENDEDOR;
-
     if (editingUser) {
       await updateMutation.mutateAsync({
         id: editingUser.id,
@@ -54,19 +52,21 @@ export function UsersPage() {
           nome: values.nome,
           papel: values.papel,
           telefoneWhatsapp: values.telefoneWhatsapp || null,
-          ...(isVendedor
-            ? { usuario: values.usuario, ...(values.pin ? { pin: values.pin } : {}) }
-            : { email: values.email, ...(values.senha ? { senha: values.senha } : {}) }),
+          ...(values.usuario ? { usuario: values.usuario } : {}),
+          ...(values.pin ? { pin: values.pin } : {}),
+          ...(values.email ? { email: values.email } : {}),
+          ...(values.senha ? { senha: values.senha } : {}),
         },
       });
     } else {
       await createMutation.mutateAsync({
         nome: values.nome,
         papel: values.papel,
+        usuario: values.usuario,
+        pin: values.pin,
         telefoneWhatsapp: values.telefoneWhatsapp || undefined,
-        ...(isVendedor
-          ? { usuario: values.usuario, pin: values.pin }
-          : { email: values.email, senha: values.senha }),
+        ...(values.email ? { email: values.email } : {}),
+        ...(values.senha ? { senha: values.senha } : {}),
       });
     }
   }
@@ -111,10 +111,10 @@ export function UsersPage() {
               <tr key={user.id}>
                 <td className="px-4 py-2">{user.nome}</td>
                 <td className="px-4 py-2">
-                  {user.papel === Role.VENDEDOR ? (
-                    <span className="text-slate-500">@{user.usuario}</span>
-                  ) : (
-                    user.email
+                  <span className="text-slate-700">{user.usuario ? `@${user.usuario}` : '—'}</span>
+                  {user.email && <span className="block text-xs text-slate-400">{user.email}</span>}
+                  {!user.usuario && (
+                    <span className="block text-xs text-amber-700">Sem PIN — não aparece na grade</span>
                   )}
                 </td>
                 <td className="px-4 py-2">{ROLE_LABEL[user.papel]}</td>

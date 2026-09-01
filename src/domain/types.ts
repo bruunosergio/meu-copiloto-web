@@ -15,8 +15,8 @@ export enum ShortageStatus {
 }
 
 /**
- * ADMIN/COMPRADOR tem email (nunca usuario); VENDEDOR tem usuario (nunca email) -
- * ver ADR-0007 do backend.
+ * Entrada principal: usuario+PIN pela porta da loja (ADR-0010).
+ * E-mail e opcional (contas antigas / acesso de emergencia).
  */
 export interface User {
   id: string;
@@ -40,6 +40,7 @@ export interface StoreInfo {
 export interface VendedorSummary {
   id: string;
   nome: string;
+  papel: Role;
 }
 
 export interface Shortage {

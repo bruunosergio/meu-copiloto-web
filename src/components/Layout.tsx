@@ -10,20 +10,20 @@ const linkClasses = ({ isActive }: { isActive: boolean }) =>
   }`;
 
 export function Layout() {
-  const { user, logout, trocarVendedor } = useAuth();
+  const { user, logout, trocarVendedor, hasStoreSession } = useAuth();
   const navigate = useNavigate();
   useVendedorInactivityTimeout(user);
 
   if (!user) return null;
 
   function handleSair() {
-    if (user!.papel === Role.VENDEDOR) {
-      // Mantem a sessao do terminal aberta - so devolve ao seletor de nomes.
+    if (hasStoreSession) {
       trocarVendedor();
       navigate('/loja/vendedores', { replace: true });
-    } else {
-      logout();
+      return;
     }
+    logout();
+    navigate('/loja', { replace: true });
   }
 
   return (
@@ -64,7 +64,7 @@ export function Layout() {
               {user.nome} <span className="text-slate-400">· {ROLE_LABEL[user.papel]}</span>
             </span>
             <Button variant="secondary" onClick={handleSair}>
-              {user.papel === Role.VENDEDOR ? 'Trocar vendedor' : 'Sair'}
+              {hasStoreSession ? 'Trocar usuário' : 'Sair'}
             </Button>
           </div>
         </div>

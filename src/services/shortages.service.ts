@@ -53,4 +53,16 @@ export const shortagesService = {
     });
     return data;
   },
+  update: async (id: string, payload: CreateShortagePayload): Promise<Shortage> => {
+    const { data } = await apiClient.patch<Shortage>(`/shortages/${id}`, payload);
+    return data;
+  },
+  similares: async (params: {
+    nome: string;
+    codigo?: string;
+    ignorarId?: string;
+  }): Promise<Shortage[]> => {
+    const { data } = await apiClient.get<Shortage[]>('/shortages/similares', { params });
+    return data;
+  },
 };
