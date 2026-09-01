@@ -1,0 +1,16 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Meu Copiloto</title>
+    <script>
+      (function () {
+        var destino = location.pathname + location.search + location.hash;
+        if (destino.indexOf('/?redirect=') === 0) return;
+        location.replace('/?redirect=' + encodeURIComponent(destino));
+      })();
+    </script>
+  </head>
+  <body></body>
+</html>

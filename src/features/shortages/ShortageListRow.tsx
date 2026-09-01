@@ -125,8 +125,8 @@ export function ShortageListRow({
           </Button>
         )}
         {podeEditarFalta && (
-          <Button variant="ghost" onClick={() => onEdit(shortage)} disabled={isMutating}>
-            Editar
+          <Button variant="secondary" onClick={() => onEdit(shortage)} disabled={isMutating}>
+            Editar falta
           </Button>
         )}
         {podeCancelar && podeCancelarEsteStatus && (

@@ -7,6 +7,11 @@ import { AuthProvider } from './features/auth/AuthContext';
 import App from './App';
 import './index.css';
 
+const redirecionamento = new URLSearchParams(window.location.search).get('redirect');
+if (redirecionamento?.startsWith('/') && !redirecionamento.startsWith('//')) {
+  window.history.replaceState(null, '', redirecionamento);
+}
+
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <QueryClientProvider client={queryClient}>
