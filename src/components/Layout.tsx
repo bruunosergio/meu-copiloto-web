@@ -1,6 +1,7 @@
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { Role, ROLE_LABEL, podeGerenciarTarefas } from '../domain';
 import { useAuth } from '../features/auth/AuthContext';
+import { useOnline } from '../lib/network';
 import { useVendedorInactivityTimeout } from '../features/auth/useVendedorInactivityTimeout';
 import { Button } from './Button';
 
@@ -10,8 +11,10 @@ const linkClasses = ({ isActive }: { isActive: boolean }) =>
   }`;
 
 export function Layout() {
-  const { user, logout, trocarVendedor, hasStoreSession } = useAuth();
+  const { user, logout, trocarVendedor, hasStoreSession, isOfflineSession, pendentesOffline } =
+    useAuth();
   const navigate = useNavigate();
+  const online = useOnline();
   useVendedorInactivityTimeout(user);
 
   if (!user) return null;
@@ -70,6 +73,13 @@ export function Layout() {
         </div>
       </header>
       <main className="mx-auto max-w-6xl px-4 py-6">
+        {(isOfflineSession || !online || pendentesOffline > 0) && (
+          <p className="mb-4 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900">
+            {!online || isOfflineSession
+              ? 'Sem internet. Você pode registrar falta; o envio acontece quando a rede voltar.'
+              : `${pendentesOffline} falta${pendentesOffline === 1 ? '' : 's'} ainda neste computador, enviando…`}
+          </p>
+        )}
         <Outlet />
       </main>
     </div>

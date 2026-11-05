@@ -24,7 +24,7 @@ const COLUNAS_ABERTAS: ShortageStatus[] = [ShortageStatus.REGISTRADA, ShortageSt
 const STATUS_ARQUIVO: ShortageStatus[] = [ShortageStatus.RECEBIDA, ShortageStatus.CANCELADA];
 
 export function ShortagesQueuePage() {
-  const { user } = useAuth();
+  const { user, pendentesOffline } = useAuth();
   const queryClient = useQueryClient();
 
   const [busca, setBusca] = useState('');
@@ -294,6 +294,12 @@ export function ShortagesQueuePage() {
         </div>
       )}
 
+      {pendentesOffline > 0 && (
+        <p className="mb-3 text-sm text-amber-800">
+          {pendentesOffline} registro{pendentesOffline === 1 ? '' : 's'} neste computador ainda não
+          foram para a fila (sem internet ou enviando agora).
+        </p>
+      )}
       {actionError && <p className="mb-3 text-sm text-red-600">{actionError}</p>}
       {error && <p className="mb-3 text-sm text-red-600">{extractErrorMessage(error)}</p>}
       {isLoading && <p className="text-sm text-slate-500">Carregando faltas...</p>}

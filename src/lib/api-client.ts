@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { shortageOutbox } from './offline-outbox';
 import { authStorage } from './storage';
 
 export const apiClient = axios.create({
@@ -6,7 +7,11 @@ export const apiClient = axios.create({
 });
 
 /** Rotas do fluxo do terminal da loja usam o storeToken, nao o token do usuario (ver ADR-0007). */
-const ROTAS_SESSAO_LOJA = ['/auth/loja/vendedores', '/auth/loja/vendedor-login'];
+const ROTAS_SESSAO_LOJA = [
+  '/auth/loja/vendedores',
+  '/auth/loja/vendedor-login',
+  '/auth/loja/offline-bundle',
+];
 
 function ehRotaDeSessaoDaLoja(url?: string): boolean {
   if (!url) return false;
@@ -33,6 +38,9 @@ apiClient.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
+      if (shortageOutbox.count() > 0) {
+        return Promise.reject(error);
+      }
       if (ehRotaDeSessaoDaLoja(error.config?.url)) {
         authStorage.clearStoreSession();
         if (window.location.pathname !== '/loja') {
@@ -57,6 +65,9 @@ export function extractErrorMessage(error: unknown): string {
     const data = error.response?.data as { message?: string | string[] } | undefined;
     if (Array.isArray(data?.message)) return data.message.join(' ');
     if (typeof data?.message === 'string') return data.message;
+  }
+  if (error instanceof Error && error.message) {
+    return error.message;
   }
   return 'Ocorreu um erro inesperado. Tente novamente.';
 }

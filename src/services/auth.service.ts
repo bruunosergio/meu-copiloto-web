@@ -35,4 +35,12 @@ export const authService = {
     const { data } = await apiClient.post<LoginResponse>('/auth/loja/vendedor-login', { userId, pin });
     return data;
   },
+
+  getOfflineBundle: async (): Promise<{
+    store: StoreInfo;
+    users: Array<{ id: string; nome: string; papel: import('../domain').Role; pinHash: string }>;
+  }> => {
+    const { data } = await apiClient.get('/auth/loja/offline-bundle');
+    return data;
+  },
 };

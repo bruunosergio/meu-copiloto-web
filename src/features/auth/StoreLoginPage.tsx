@@ -42,6 +42,7 @@ export function StoreLoginPage() {
         <h1 className="mb-1 text-2xl font-semibold text-slate-900">Meu Copiloto</h1>
         <p className="mb-6 text-sm text-slate-500">
           Entre com o código e a senha da loja. Depois cada um escolhe o próprio nome e o PIN.
+          Depois da primeira abertura neste computador, o terminal também abre sem internet.
         </p>
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">

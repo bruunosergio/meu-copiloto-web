@@ -20,6 +20,8 @@ npm run dev
 
 O app sobe em `http://localhost:5173`. O dia a dia de **todos os papéis** é `/loja` (código+senha do `npm run seed`: `SEED_STORE_CODIGO`/`SEED_STORE_SENHA`) e depois nome + PIN. `/login` é só emergência para quem ainda tem e-mail+senha sem PIN — ver [ADR-0010](../meu-copiloto-backend/docs/adr/0010-login-unico-edicao-e-aviso-similar.md) do backend.
 
+Depois da **primeira** abertura online neste computador, o terminal (código+senha e PIN) e o **registro de falta** funcionam sem internet. As faltas ficam no PC e sobem sozinhas quando a rede volta. Cancelar/editar/fila de compra continuam exigindo conexão.
+
 ### Scripts
 
 | Comando | O que faz |

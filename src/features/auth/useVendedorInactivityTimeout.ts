@@ -1,6 +1,8 @@
 import { useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Role, User } from '../../domain';
+import { estaOffline } from '../../lib/network';
+import { shortageOutbox } from '../../lib/offline-outbox';
 import { useAuth } from './AuthContext';
 
 /** Terminal compartilhado: depois disso sem interação, volta ao seletor de nomes (ver ADR-0007 do backend). */
@@ -20,10 +22,14 @@ export function useVendedorInactivityTimeout(user: User | null) {
     if (user?.papel !== Role.VENDEDOR) {
       return;
     }
+    if (estaOffline() || shortageOutbox.count() > 0) {
+      return;
+    }
 
     function resetTimer() {
       if (timeoutRef.current) clearTimeout(timeoutRef.current);
       timeoutRef.current = setTimeout(() => {
+        if (estaOffline() || shortageOutbox.count() > 0) return;
         trocarVendedor();
         navigate('/loja/vendedores', { replace: true });
       }, INATIVIDADE_LIMITE_MS);
