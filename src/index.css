@@ -5,3 +5,30 @@
 body {
   @apply bg-slate-50 text-slate-900;
 }
+
+.print-only {
+  display: none;
+}
+
+@media print {
+  .no-print {
+    display: none !important;
+  }
+
+  .print-only {
+    display: block !important;
+  }
+
+  .print-only table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+  }
+
+  .print-only th,
+  .print-only td {
+    border-bottom: 1px solid #ccc;
+    padding: 4px 6px;
+    text-align: left;
+  }
+}

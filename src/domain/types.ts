@@ -156,3 +156,7 @@ export function podeGerenciarFilaCompleta(papel: Role): boolean {
 export function podeGerenciarTarefas(papel: Role): boolean {
   return papel === Role.ADMIN || papel === Role.GERENTE;
 }
+
+export function podeGerenciarCobrancas(papel: Role): boolean {
+  return podeGerenciarTarefas(papel);
+}

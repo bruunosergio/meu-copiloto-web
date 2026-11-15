@@ -1,5 +1,5 @@
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
-import { Role, ROLE_LABEL, podeGerenciarTarefas } from '../domain';
+import { Role, ROLE_LABEL, podeGerenciarCobrancas, podeGerenciarTarefas } from '../domain';
 import { useAuth } from '../features/auth/AuthContext';
 import { useOnline } from '../lib/network';
 import { useVendedorInactivityTimeout } from '../features/auth/useVendedorInactivityTimeout';
@@ -35,7 +35,7 @@ export function Layout() {
         <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3">
           <div className="flex items-center gap-6">
             <span className="text-lg font-semibold text-brand-700">Meu Copiloto</span>
-            <nav className="flex gap-1">
+            <nav className="flex flex-wrap gap-1">
               <NavLink to="/faltas" className={linkClasses}>
                 Fila de Faltas
               </NavLink>
@@ -48,6 +48,11 @@ export function Layout() {
               {podeGerenciarTarefas(user.papel) && (
                 <NavLink to="/tarefas" className={linkClasses}>
                   Tarefas
+                </NavLink>
+              )}
+              {podeGerenciarCobrancas(user.papel) && (
+                <NavLink to="/cobrancas" className={linkClasses}>
+                  Cobranças
                 </NavLink>
               )}
               {user.papel === Role.ADMIN && (

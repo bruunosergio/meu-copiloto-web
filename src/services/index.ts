@@ -4,3 +4,4 @@ export * from './shortages.service';
 export * from './distribuidoras.service';
 export * from './emprestimos.service';
 export * from './tarefas.service';
+export * from './cobrancas.service';

@@ -11,6 +11,7 @@ import { RegisterShortagePage } from './features/shortages/RegisterShortagePage'
 import { ShortagesQueuePage } from './features/shortages/ShortagesQueuePage';
 import { EmprestimosPage } from './features/emprestimos/EmprestimosPage';
 import { TarefasPage } from './features/tarefas/TarefasPage';
+import { CobrancasPage } from './features/cobrancas/CobrancasPage';
 
 export default function App() {
   return (
@@ -28,6 +29,7 @@ export default function App() {
 
           <Route element={<ProtectedRoute allowedRoles={[Role.ADMIN, Role.GERENTE]} />}>
             <Route path="/tarefas" element={<TarefasPage />} />
+            <Route path="/cobrancas" element={<CobrancasPage />} />
           </Route>
 
           <Route element={<ProtectedRoute allowedRoles={[Role.ADMIN]} />}>
