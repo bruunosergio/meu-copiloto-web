@@ -1,8 +1,10 @@
 # Meu Copiloto — Painel Web
 
-Painel web do [Meu Copiloto](../meu-copiloto-backend), o assistente de reposição de estoque. Aqui vivem o login, a administração de usuários, o formulário de registro manual de falta e a fila do comprador — as telas que precisam de tela grande e mouse, complementando a captura por WhatsApp (Fase 2).
+Painel do [Meu Copiloto](https://github.com/bruunosergio/meu-copiloto-backend): login, usuários, registro de falta e fila do comprador. Feito para tela grande; a captura por WhatsApp fica na Fase 2 do backend.
 
-> **Status:** Fase 1 — núcleo sem IA. Consome a API do `meu-copiloto-backend`.
+> **Status:** Fase 1 — consome a API NestJS. Terminal da loja com fluxo offline (outbox) após a primeira sincronização.
+
+**Autor:** [Bruno Sérgio](https://github.com/bruunosergio) · [Portfólio](https://bruno-portfolio-plum.vercel.app)
 
 ## Stack
 
